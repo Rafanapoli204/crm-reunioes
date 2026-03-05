@@ -6,7 +6,7 @@
 <title>CRM Reuniões</title>
 
 <!-- Supabase JS SDK — resolve o problema de CORS automaticamente -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
 
 <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 
@@ -360,9 +360,25 @@ tr:hover td { background:rgba(255,255,255,.02); }
     </div>
     <div class="gc">
       <div class="card-header"><div class="card-icon">⏱️</div><div class="card-label">Tempo da Ação</div></div>
-      <div class="slider-value" id="slider-val">1 semana</div>
-      <input type="range" id="tempo-slider" min="1" max="52" value="1" oninput="updateSlider()" />
-      <div class="slider-labels"><span>1 sem</span><span>1 mês</span><span>3 m</span><span>6 m</span><span>1 ano</span></div>
+
+      <div style="margin-bottom:14px">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:5px">Dias</div>
+        <div class="slider-value" id="slider-dias-val" style="font-size:15px">1 dia</div>
+        <input type="range" id="slider-dias" min="1" max="6" value="1" oninput="updateSliderDias()" />
+        <div class="slider-labels"><span>1d</span><span>2d</span><span>3d</span><span>4d</span><span>5d</span><span>6d</span></div>
+      </div>
+
+      <div style="margin-bottom:14px">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:5px">Semanas</div>
+        <div class="slider-value" id="slider-sem-val" style="font-size:15px">1 semana</div>
+        <input type="range" id="slider-sem" min="1" max="4" value="1" oninput="updateSliderSem()" />
+        <div class="slider-labels"><span>1 sem</span><span>2 sem</span><span>3 sem</span><span>4 sem</span></div>
+      </div>
+
+      <div>
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:5px">Meses</div>
+        <input class="field-input" id="tempo-meses" placeholder="Ex: 3 meses, 6 meses..." style="width:100%;font-size:12px;padding:7px 11px" oninput="updateCount()" />
+      </div>
     </div>
     <div class="gc">
       <div class="card-header"><div class="card-icon">👥</div><div class="card-label">Foco em Público</div></div>
@@ -529,10 +545,14 @@ function switchTab(name, btn) {
 // ══════════════════════════════════
 // FORM HELPERS
 // ══════════════════════════════════
-function updateSlider() {
-  const v = parseInt(document.getElementById('tempo-slider').value);
-  let l = v===1?'1 semana':v<4?`${v} semanas`:v===52?'1 ano':v<26?`${Math.round(v/4)} meses`:`${(v/4).toFixed(1)} meses`;
-  document.getElementById('slider-val').textContent = l;
+function updateSliderDias() {
+  const v = parseInt(document.getElementById('slider-dias').value);
+  document.getElementById('slider-dias-val').textContent = v + (v===1?' dia':' dias');
+  updateCount();
+}
+function updateSliderSem() {
+  const v = parseInt(document.getElementById('slider-sem').value);
+  document.getElementById('slider-sem-val').textContent = v + (v===1?' semana':' semanas');
   updateCount();
 }
 function updateDuration() {
@@ -558,7 +578,7 @@ function updateCount() {
   if(document.getElementById('orcamento').value)n++;
   if(getTags('tags-pracas').length)n++;
   if(document.getElementById('data-inicio').value)n++;
-  if(parseInt(document.getElementById('tempo-slider').value)>1)n++;
+  if(parseInt(document.getElementById('slider-dias').value)>1||parseInt(document.getElementById('slider-sem').value)>1||document.getElementById('tempo-meses').value)n++;
   if(document.querySelectorAll('[data-group="publico"].active').length)n++;
   document.getElementById('filledCount').textContent=`${n} de 8 campos`;
 }
@@ -585,7 +605,11 @@ async function saveReuniao() {
     pracas:      getTags('tags-pracas').join(', '),
     data_inicio: document.getElementById('data-inicio').value,
     data_fim:    document.getElementById('data-fim').value,
-    tempo_acao:  document.getElementById('slider-val').textContent,
+    tempo_acao:  [
+      parseInt(document.getElementById('slider-dias').value)>1 ? document.getElementById('slider-dias-val').textContent : '',
+      parseInt(document.getElementById('slider-sem').value)>1 ? document.getElementById('slider-sem-val').textContent : '',
+      document.getElementById('tempo-meses').value || ''
+    ].filter(Boolean).join(' / ') || document.getElementById('slider-dias-val').textContent,
     publico:     [...document.querySelectorAll('[data-group="publico"].active')].map(p=>p.textContent).join(', '),
     localizacao: [...getTags('tags-local'),...[...document.querySelectorAll('[data-group="local"].active')].map(p=>p.textContent)].join(', '),
     obs:         document.getElementById('obs').value,
@@ -608,8 +632,11 @@ function clearAll() {
     document.getElementById(id).value='';
   });
   document.getElementById('duracao-label').textContent='';
-  document.getElementById('tempo-slider').value=1;
-  document.getElementById('slider-val').textContent='1 semana';
+  document.getElementById('slider-dias').value=1;
+  document.getElementById('slider-dias-val').textContent='1 dia';
+  document.getElementById('slider-sem').value=1;
+  document.getElementById('slider-sem-val').textContent='1 semana';
+  document.getElementById('tempo-meses').value='';
   document.querySelectorAll('.tag').forEach(t=>t.remove());
   document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
   updateCount();
